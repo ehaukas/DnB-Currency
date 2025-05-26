@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="refresh" content="9000">
+  <title>Valutakurser</title>
+  <style>
+    body {
+      font-family: Open Sans;
+      background: white;
+      color: #2F549A;
+      font-size: 1.8em;
+      margin: 0;
+      padding: 2em;
+      text-align: center;
+    }
+    .rate-label {
+      color: rgb(47, 84, 154);
+      font-weight: bold;
+    }
+    .rate-value {
+      color: rgba(47, 84, 154, 0.72);
+    }
+    .timestamp {
+      font-size: 0.7em; /* Adjusting the timestamp size */
+      color: #7F8C8D; /* Grey color for timestamp */
+      text-align: center;
+      margin-top: 10px;
+    }
+    .source {
+      font-size: 0.6em; /* Smaller font size for source */
+      color: #7F8C8D; /* Grey color for source */
+      text-align: right;
+    }
+    .updated {
+      font-size: 0.9em; /* Keeping 'Oppdatert' bigger than the timestamp */
+      color: rgb(47, 84, 154); /* Blue color for 'Oppdatert:' */
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <div id="rates">Laster valutakurser…</div>
+  <div class="timestamp" id="timestamp"></div>
+
+  <script>
+    function formatDate(isoString) {
+      const date = new Date(isoString);
+      const dd = String(date.getDate()).padStart(2, '0');
+      const mm = String(date.getMonth() + 1).padStart(2, '0');
+      const yy = String(date.getFullYear()).slice(2);
+      const hh = String(date.getHours()).padStart(2, '0');
+      const min = String(date.getMinutes()).padStart(2, '0');
+      return `${dd}.${mm} kl. ${hh}:${min}`;
+    }
+
+    fetch("/api/rates")
+      .then(res => res.json())
+      .then(data => {
+        const parts = [];
+        let updated = "";
+
+        data.forEach(rate => {
+          const label = `NOK-${rate.currency}`;
+          const value = `kr. ${rate.midRate.toFixed(2)}`;
+          parts.push(`<span class='rate-label'>${label}:</span> <span class='rate-value'>${value}</span>`);
+          updated = formatDate(rate.updatedDate);
+        });
+
+        const firstLine = parts.join(" &nbsp;|&nbsp; ");
+        const secondLine = `<span class='updated'>Oppdatert:</span> <span class='timestamp'>${updated}</span>`;
+        const source = "<span class='source'>Kilde: ExchangeRate.host</span>";
+
+        // Set the first and second line in the HTML
+        document.getElementById("rates").innerHTML = firstLine;
+        document.getElementById("timestamp").innerHTML = secondLine + " &nbsp;" + source;
+      })
+      .catch(err => {
+        document.getElementById("rates").textContent = "Feil ved henting av valutakurser";
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
