@@ -1,63 +1,60 @@
 const express = require('express');
-const fetch = require('node-fetch');
-const path = require('path');
-
+const fetch = require('node-fetch');  // Import node-fetch to use fetch in Node.js
+const path = require('path');  // Import path module to serve static files
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// API-key as environment variable
-const API_KEY = process.env.EXCHANGE_RATE_API_KEY; // Make sure this is set on Render
-
-let cachedRates = []; // Variable to store the fetched data
-
-// Serve static files including the HTML file
-app.use(express.static(path.join(__dirname)));
-
-// CORS header
+// Allow CORS from anywhere
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
+  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE');
+  res.header('Access-Control-Allow-Headers', 'Content-Type, x-api-key');
   next();
 });
 
-// Fetch currency rates function for DnB API
-async function fetchRates() {
-  try {
-    const response = await fetch(`https://api.dnb.no/currencies/v2/convert/NOK`, {
-      headers: {
-        'x-api-key': API_KEY
-      }
-    });
-    const result = await response.json();
+// Serve static files (HTML file from the public folder)
+app.use(express.static(path.join(__dirname, 'public')));
 
-    if (!result || !result.data) {
-      throw new Error("Missing rates from DnB API");
+// API endpoint to fetch exchange rates from DNB API
+app.get('/api/rates', async (req, res) => {
+  try {
+    const response = await fetch('https://developer-api.dnb.no/currencies/v2/convert/NOK', {
+      method: 'GET',
+      headers: { 'x-api-key': '85ba6bec389e4ffb9e54858b054a32ce' }
+    });
+
+    if (!response.ok) {
+      return res.status(response.status).send(`DNB API error: ${response.statusText}`);
     }
 
-    const now = new Date();
-    cachedRates = result.data.map(rate => {
+    const data = await response.json();
+
+    // Define the target currencies (EUR, GBP, USD, DKK)
+    const targetCurrencies = ['EUR', 'GBP', 'USD', 'DKK'];
+
+    // Filter the data to return only the relevant rates in the specified order
+    const adaptedData = targetCurrencies.map(currency => {
+      const rate = data.find(rate => rate.currency === currency);
       return {
-        currency: rate.currency,
-        quoteCurrency: "NOK",
-        midRate: rate.midRate,  // Assuming 'midRate' is the exchange rate
-        updatedDate: now.toISOString()
+        currency: rate ? rate.currency : currency,
+        midRate: rate ? rate.midRate : null,
+        updatedDate: rate ? rate.updatedDate : null
       };
     });
 
-    console.log('✅ Rates updated successfully');
+    // Send the filtered and ordered data to the client
+    res.json(adaptedData);
   } catch (err) {
-    console.error('❌ Fetch error:', err);
+    res.status(500).send(`Server error: ${err.message}`);
   }
-}
-
-// Initial fetch when server starts
-fetchRates();
-
-// API endpoint that returns cached data
-app.get('/api/rates', (req, res) => {
-  res.json(cachedRates); // Send the stored rates
 });
 
-// Start server
+// Serve the HTML page on the root URL
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'currency-widget.html'));
+});
+
+// Start the server (Render will use the environment variable PORT)
 app.listen(PORT, () => {
-  console.log(`✅ Currency Widget API running at http://localhost:${PORT}/api/rates`);
+  console.log(`Server running at http://localhost:${PORT}`);
 });
