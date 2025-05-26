@@ -4,6 +4,9 @@ const path = require('path');  // Import path module to serve static files
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// API-key as environment variable
+const API_KEY = process.env.EXCHANGE_RATE_API_KEY; // Make sure this is set on Render
+
 // Allow CORS from anywhere
 app.use((req, res, next) => {
   res.header('Access-Control-Allow-Origin', '*');
@@ -20,7 +23,7 @@ app.get('/api/rates', async (req, res) => {
   try {
     const response = await fetch('https://developer-api.dnb.no/currencies/v2/convert/NOK', {
       method: 'GET',
-      headers: { 'x-api-key': '85ba6bec389e4ffb9e54858b054a32ce' }
+      headers: { 'x-api-key': 'API_KEY' }
     });
 
     if (!response.ok) {
