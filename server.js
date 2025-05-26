@@ -23,7 +23,7 @@ app.get('/api/rates', async (req, res) => {
   try {
     const response = await fetch('https://developer-api.dnb.no/currencies/v2/convert/NOK', {
       method: 'GET',
-      headers: { 'x-api-key': 'API_KEY' }
+      headers: { 'x-api-key': API_KEY }
     });
 
     if (!response.ok) {
