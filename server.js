@@ -19,23 +19,26 @@ app.use((req, res, next) => {
   next();
 });
 
-// Fetch currency rates function
+// Fetch currency rates function for DnB API
 async function fetchRates() {
   try {
-    const response = await fetch(`https://api.exchangerate.host/live?access_key=${API_KEY}&source=NOK&currencies=EUR,GBP,USD,DKK&format=1`);
+    const response = await fetch(`https://api.dnb.no/currencies/v2/convert/NOK`, {
+      headers: {
+        'x-api-key': API_KEY
+      }
+    });
     const result = await response.json();
 
-    if (!result.quotes) {
-      throw new Error("Missing quotes from API");
+    if (!result || !result.data) {
+      throw new Error("Missing rates from DnB API");
     }
 
     const now = new Date();
-    cachedRates = Object.entries(result.quotes).map(([pair, rate]) => {
-      const currency = pair.slice(3); // Remove 'NOK' prefix
+    cachedRates = result.data.map(rate => {
       return {
-        currency,
+        currency: rate.currency,
         quoteCurrency: "NOK",
-        midRate: 1 / rate,  // Convert to desired currency format
+        midRate: rate.midRate,  // Assuming 'midRate' is the exchange rate
         updatedDate: now.toISOString()
       };
     });
