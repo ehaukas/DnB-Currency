@@ -21,7 +21,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 // API endpoint to fetch exchange rates from DNB API
 app.get('/api/rates', async (req, res) => {
   try {
-    const response = await fetch('https://developer-api.dnb.no/currencies/v2/convert/NOK', {
+    const response = await fetch('https://partner.api.dnb.no/markets/currencies/v2/convert/NOK', {
       method: 'GET',
       headers: { 'x-api-key': API_KEY }
     });
@@ -61,3 +61,4 @@ app.get('/', (req, res) => {
 app.listen(PORT, () => {
   console.log(`Server running at http://localhost:${PORT}`);
 });
+
